@@ -4,6 +4,9 @@ import 'sensores_page.dart';
 import 'ubicacion_page.dart';
 import 'historial_page.dart';
 
+/// Pantalla de acceso al registro de mediciones.
+/// Permite elegir sensores físicos, GPS o consultar
+/// registros almacenados previamente en Supabase.
 class RegistroPage extends StatelessWidget {
   final String tipoInicial;
 
@@ -23,6 +26,7 @@ class RegistroPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          // Encabezado principal del módulo.
           Container(
             padding: const EdgeInsets.all(25),
             decoration: BoxDecoration(
@@ -64,6 +68,7 @@ class RegistroPage extends StatelessWidget {
 
           const SizedBox(height: 20),
 
+          // Acceso al acelerómetro y giroscopio.
           opcion(
             context,
             Icons.sensors,
@@ -74,6 +79,7 @@ class RegistroPage extends StatelessWidget {
 
           const SizedBox(height: 10),
 
+          // Acceso a la captura de ubicación GPS.
           opcion(
             context,
             Icons.location_on,
@@ -84,6 +90,7 @@ class RegistroPage extends StatelessWidget {
 
           const SizedBox(height: 10),
 
+          // Acceso a los registros almacenados.
           opcion(
             context,
             Icons.history,
@@ -96,6 +103,8 @@ class RegistroPage extends StatelessWidget {
     );
   }
 
+  /// Construye una tarjeta de menú y utiliza Navigator
+  /// para abrir la pantalla seleccionada.
   Widget opcion(
     BuildContext context,
     IconData icono,

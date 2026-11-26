@@ -2,6 +2,9 @@
 import 'package:flutter/material.dart';
 import 'mediciones_service.dart';
 
+/// Pantalla que consulta y presenta el historial
+/// de mediciones almacenadas en Supabase.
+/// Permite visualizar los detalles de cada registro.
 class HistorialPage extends StatefulWidget {
   const HistorialPage({super.key});
 
@@ -17,16 +20,19 @@ class _HistorialPageState extends State<HistorialPage> {
   @override
   void initState() {
     super.initState();
+
+    // Recupera los registros al abrir el historial.
     mediciones = servicio.getMediciones();
   }
 
-  // Volver a consultar los registros.
+  /// Vuelve a consultar los registros de Supabase.
   void actualizar() {
     setState(() {
       mediciones = servicio.getMediciones();
     });
   }
 
+  /// Selecciona el icono según el tipo de sensor.
   IconData iconoSensor(String tipo) {
     switch (tipo) {
       case 'accelerometer':
@@ -40,6 +46,7 @@ class _HistorialPageState extends State<HistorialPage> {
     }
   }
 
+  /// Define el color utilizado para cada sensor.
   Color colorSensor(String tipo) {
     switch (tipo) {
       case 'accelerometer':
@@ -53,7 +60,8 @@ class _HistorialPageState extends State<HistorialPage> {
     }
   }
 
-  // Ventana de detalles de una medición.
+  /// Presenta el detalle de una medición seleccionada.
+  /// Incluye identificador, valores y fecha de registro.
   void mostrarDetalle(Map<String, dynamic> medicion) {
     final tipo = medicion['sensor_type'].toString();
 
@@ -99,6 +107,8 @@ class _HistorialPageState extends State<HistorialPage> {
     );
   }
 
+  /// Construye la interfaz del historial.
+  /// FutureBuilder administra carga, errores y datos.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -116,6 +126,7 @@ class _HistorialPageState extends State<HistorialPage> {
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: mediciones,
         builder: (context, snapshot) {
+          // Muestra un indicador mientras consulta Supabase.
           if (snapshot.connectionState ==
               ConnectionState.waiting) {
             return const Center(
@@ -123,6 +134,7 @@ class _HistorialPageState extends State<HistorialPage> {
             );
           }
 
+          // Presenta una opción de reintento si falla.
           if (snapshot.hasError) {
             return Center(
               child: Padding(
@@ -152,6 +164,7 @@ class _HistorialPageState extends State<HistorialPage> {
 
           final datos = snapshot.data ?? [];
 
+          // Mensaje cuando no existen mediciones.
           if (datos.isEmpty) {
             return const Center(
               child: Column(
@@ -169,6 +182,7 @@ class _HistorialPageState extends State<HistorialPage> {
             );
           }
 
+          // Muestra la cantidad y lista de registros.
           return Column(
             children: [
               Container(
@@ -188,6 +202,9 @@ class _HistorialPageState extends State<HistorialPage> {
                   ),
                 ),
               ),
+
+              // ListView.builder genera una tarjeta
+              // por cada medición recuperada.
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(
@@ -220,6 +237,8 @@ class _HistorialPageState extends State<HistorialPage> {
                           '${servicio.formatearFecha(medicion['recorded_at'])}',
                         ),
                         trailing: const Icon(Icons.chevron_right),
+
+                        // Abre el detalle del registro seleccionado.
                         onTap: () => mostrarDetalle(medicion),
                       ),
                     );

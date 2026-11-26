@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'mediciones_service.dart';
 
+/// Pantalla que monitorea el acelerómetro y giroscopio.
+/// Presenta los valores X, Y y Z en tiempo real y permite
+/// guardar capturas de ambos sensores en Supabase.
 class SensoresPage extends StatefulWidget {
   const SensoresPage({super.key});
 
@@ -14,22 +17,27 @@ class SensoresPage extends StatefulWidget {
 class _SensoresPageState extends State<SensoresPage> {
   final servicio = MedicionesService();
 
+  // Suscripciones para recibir lecturas de ambos sensores.
   StreamSubscription<AccelerometerEvent>? _acelerometroSub;
   StreamSubscription<GyroscopeEvent>? _giroscopioSub;
 
+  // Almacenan temporalmente la última lectura.
   Map<String, dynamic>? _acelerometro;
   Map<String, dynamic>? _giroscopio;
 
   String _estadoA = 'Esperando lectura';
   String _estadoG = 'Esperando lectura';
 
+  // Evita guardar varias mediciones simultáneamente.
   bool _guardando = false;
 
+  /// Inicia la captura de sensores al abrir la pantalla.
   @override
   void initState() {
     super.initState();
 
-    // Lectura del acelerómetro físico.
+    // Escucha los cambios del acelerómetro físico
+    // aproximadamente cada 200 milisegundos.
     _acelerometroSub = accelerometerEventStream(
       samplingPeriod: const Duration(milliseconds: 200),
     ).timeout(const Duration(seconds: 5)).listen(
@@ -58,7 +66,8 @@ class _SensoresPageState extends State<SensoresPage> {
       cancelOnError: true,
     );
 
-    // Lectura del giroscopio físico.
+    // Escucha el giroscopio para detectar
+    // la velocidad de rotación del dispositivo.
     _giroscopioSub = gyroscopeEventStream(
       samplingPeriod: const Duration(milliseconds: 200),
     ).timeout(const Duration(seconds: 5)).listen(
@@ -88,7 +97,8 @@ class _SensoresPageState extends State<SensoresPage> {
     );
   }
 
-  // Construir una medición.
+  /// Construye una medición con los valores de sus
+  /// tres ejes y la fecha de captura en formato UTC.
   Map<String, dynamic> medicion(
     String tipo,
     double x,
@@ -106,7 +116,8 @@ class _SensoresPageState extends State<SensoresPage> {
     };
   }
 
-  // Guardar la captura en Supabase.
+  /// Guarda la medición capturada en Supabase.
+  /// Muestra mensajes de éxito o error al usuario.
   Future<void> guardar(
     Map<String, dynamic> datos,
   ) async {
@@ -119,6 +130,7 @@ class _SensoresPageState extends State<SensoresPage> {
     });
 
     try {
+      // Envía los datos al servicio de base de datos.
       await servicio.guardarMedicion(captura);
 
       if (!mounted) return;
@@ -149,7 +161,9 @@ class _SensoresPageState extends State<SensoresPage> {
     }
   }
 
-  // Detener la lectura al salir de la pantalla.
+  /// Cancela las suscripciones al salir de la pantalla.
+  /// Evita que los sensores sigan enviando datos
+  /// a un widget que ya no está activo.
   @override
   void dispose() {
     _acelerometroSub?.cancel();
@@ -158,6 +172,7 @@ class _SensoresPageState extends State<SensoresPage> {
     super.dispose();
   }
 
+  /// Construye las tarjetas de ambos sensores.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -205,6 +220,7 @@ class _SensoresPageState extends State<SensoresPage> {
 
           const SizedBox(height: 25),
 
+          // Tarjeta del acelerómetro.
           sensorCard(
             'Acelerómetro',
             Icons.speed,
@@ -216,6 +232,7 @@ class _SensoresPageState extends State<SensoresPage> {
 
           const SizedBox(height: 20),
 
+          // Tarjeta del giroscopio.
           sensorCard(
             'Giroscopio',
             Icons.screen_rotation,
@@ -229,7 +246,8 @@ class _SensoresPageState extends State<SensoresPage> {
     );
   }
 
-  // Tarjeta para mostrar los valores del sensor.
+  /// Construye una tarjeta reutilizable para mostrar
+  /// valores X, Y, Z, fecha, estado y botón de guardado.
   Widget sensorCard(
     String titulo,
     IconData icono,
@@ -267,6 +285,7 @@ class _SensoresPageState extends State<SensoresPage> {
 
             const Divider(height: 30),
 
+            // Muestra los tres ejes del sensor.
             Row(
               children: [
                 for (final eje in ['x', 'y', 'z'])
@@ -316,6 +335,7 @@ class _SensoresPageState extends State<SensoresPage> {
 
             const SizedBox(height: 15),
 
+            // Estado de disponibilidad del sensor.
             Row(
               children: [
                 Icon(
@@ -330,6 +350,7 @@ class _SensoresPageState extends State<SensoresPage> {
               ],
             ),
 
+            // Fecha de la última captura disponible.
             if (datos != null)
               Text(
                 'Captura: ${servicio.formatearFecha(
@@ -339,6 +360,7 @@ class _SensoresPageState extends State<SensoresPage> {
 
             const SizedBox(height: 15),
 
+            // Guarda la última medición en Supabase.
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(

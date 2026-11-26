@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'mediciones_service.dart';
 
+/// Pantalla encargada de obtener la ubicación GPS.
+/// Muestra coordenadas, precisión y fecha de captura.
+/// Permite guardar los datos con autorización del usuario.
 class UbicacionPage extends StatefulWidget {
   const UbicacionPage({super.key});
 
@@ -14,13 +17,15 @@ class UbicacionPage extends StatefulWidget {
 class _UbicacionPageState extends State<UbicacionPage> {
   final servicio = MedicionesService();
 
+  // Última ubicación capturada.
   Position? _posicion;
 
+  // Controla el estado de carga de las operaciones.
   bool _ocupado = false;
 
   String _estado = 'Presiona Obtener ubicación';
 
-  // Obtener la ubicación física del dispositivo.
+  /// Solicita permisos y obtiene la posición GPS.
   Future<void> obtenerUbicacion() async {
     if (_ocupado) return;
 
@@ -31,17 +36,17 @@ class _UbicacionPageState extends State<UbicacionPage> {
     });
 
     try {
-      // Comprobar que la ubicación está activada.
+      // Verifica que el servicio de ubicación esté activo.
       if (!await Geolocator.isLocationServiceEnabled()) {
         throw StateError(
           'Activa la ubicación del dispositivo.',
         );
       }
 
-      // Comprobar los permisos.
+      // Comprueba los permisos de ubicación.
       var permiso = await Geolocator.checkPermission();
 
-      // Solicitar permiso al usuario.
+      // Solicita autorización si todavía no está concedida.
       if (permiso == LocationPermission.denied) {
         permiso = await Geolocator.requestPermission();
       }
@@ -60,7 +65,7 @@ class _UbicacionPageState extends State<UbicacionPage> {
         );
       }
 
-      // Capturar la posición del celular.
+      // Obtiene latitud, longitud, precisión y fecha.
       final posicion = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
@@ -78,6 +83,7 @@ class _UbicacionPageState extends State<UbicacionPage> {
     } catch (error) {
       if (!mounted) return;
 
+      // Presenta un mensaje comprensible si ocurre un error.
       setState(() {
         _estado = error is StateError
             ? error.message.toString()
@@ -94,7 +100,9 @@ class _UbicacionPageState extends State<UbicacionPage> {
     }
   }
 
-  // Guardar coordenadas en Supabase.
+  /// Solicita autorización para guardar la ubicación.
+  /// Envía las coordenadas a Supabase únicamente
+  /// cuando el usuario confirma el almacenamiento.
   Future<void> guardarUbicacion() async {
     final posicion = _posicion;
 
@@ -105,7 +113,7 @@ class _UbicacionPageState extends State<UbicacionPage> {
     });
 
     try {
-      // Solicitar autorización antes de almacenar.
+      // Muestra el diálogo de consentimiento.
       final autorizado = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -128,6 +136,7 @@ class _UbicacionPageState extends State<UbicacionPage> {
 
       if (!mounted || autorizado != true) return;
 
+      // Construye el registro GPS para sensor_readings.
       await servicio.guardarMedicion({
         'sensor_type': 'gps',
         'latitude': posicion.latitude,
@@ -166,7 +175,7 @@ class _UbicacionPageState extends State<UbicacionPage> {
     }
   }
 
-  // Mostrar un dato de ubicación.
+  /// Construye una fila para mostrar un dato de ubicación.
   Widget dato(
     IconData icono,
     Color color,
@@ -180,6 +189,7 @@ class _UbicacionPageState extends State<UbicacionPage> {
     );
   }
 
+  /// Construye la interfaz de captura y registro GPS.
   @override
   Widget build(BuildContext context) {
     final p = _posicion;
@@ -193,6 +203,7 @@ class _UbicacionPageState extends State<UbicacionPage> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          // Encabezado del módulo.
           Container(
             padding: const EdgeInsets.all(25),
             decoration: BoxDecoration(
@@ -227,6 +238,7 @@ class _UbicacionPageState extends State<UbicacionPage> {
 
           const SizedBox(height: 25),
 
+          // Tarjeta con los valores obtenidos mediante GPS.
           Card(
             color: Colors.white,
             child: Column(
@@ -280,6 +292,7 @@ class _UbicacionPageState extends State<UbicacionPage> {
 
           const SizedBox(height: 25),
 
+          // Botón para iniciar la lectura GPS.
           ElevatedButton.icon(
             onPressed: _ocupado
                 ? null
@@ -290,6 +303,7 @@ class _UbicacionPageState extends State<UbicacionPage> {
 
           const SizedBox(height: 12),
 
+          // Permite guardar cuando existe una ubicación.
           OutlinedButton.icon(
             onPressed: _ocupado || p == null
                 ? null
@@ -303,6 +317,7 @@ class _UbicacionPageState extends State<UbicacionPage> {
 
           const SizedBox(height: 20),
 
+          // Informa el estado de la captura GPS.
           Card(
             child: ListTile(
               leading: const Icon(

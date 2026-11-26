@@ -10,6 +10,9 @@ import 'historial_page.dart';
 import 'estadisticas_page.dart';
 import 'mediciones_service.dart';
 
+/// Pantalla principal de SensorTrack.
+/// Muestra el estado de Supabase, los sensores
+/// disponibles y el menú de navegación.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -27,14 +30,17 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
+    // Comprueba la conexión con Supabase al iniciar.
     _conexion = servicio.comprobarConexion().timeout(
       const Duration(seconds: 15),
     );
 
+    // Comprueba los sensores físicos del dispositivo.
     _sensores = comprobarSensores();
   }
 
-  // Comprobar si un sensor proporciona lecturas.
+  /// Comprueba si un sensor proporciona lecturas.
+  /// Limita el tiempo de espera a cinco segundos.
   Future<String> comprobarSensor(
     Stream<dynamic> stream,
   ) async {
@@ -44,13 +50,12 @@ class _HomePageState extends State<HomePage> {
           .first;
 
       return 'Lectura disponible';
-
     } catch (_) {
       return 'Sin lectura; comprueba el dispositivo';
     }
   }
 
-  // Comprobar el estado de la ubicación.
+  /// Comprueba el servicio GPS y sus permisos.
   Future<String> comprobarGps() async {
     try {
       if (!await Geolocator.isLocationServiceEnabled()) {
@@ -65,13 +70,12 @@ class _HomePageState extends State<HomePage> {
       }
 
       return 'Servicio activo; permiso pendiente';
-
     } catch (_) {
       return 'No se pudo comprobar el GPS';
     }
   }
 
-  // Comprobar los tres sensores.
+  /// Comprueba el acelerómetro, giroscopio y GPS.
   Future<List<String>> comprobarSensores() {
     return Future.wait([
       comprobarSensor(accelerometerEventStream()),
@@ -80,7 +84,8 @@ class _HomePageState extends State<HomePage> {
     ]);
   }
 
-  // Actualizar el estado del sistema.
+  /// Actualiza la conexión con Supabase y
+  /// el estado de los sensores disponibles.
   void actualizar() {
     setState(() {
       _conexion = servicio.comprobarConexion().timeout(
@@ -91,6 +96,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  /// Construye la interfaz principal del sistema.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,11 +114,10 @@ class _HomePageState extends State<HomePage> {
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bienvenida.
+            // Tarjeta de bienvenida.
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -128,9 +133,7 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.white,
                     size: 45,
                   ),
-
                   SizedBox(height: 12),
-
                   Text(
                     '¡Bienvenido a SensorTrack!',
                     style: TextStyle(
@@ -139,9 +142,7 @@ class _HomePageState extends State<HomePage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   SizedBox(height: 8),
-
                   Text(
                     'Monitorea los sensores de tu dispositivo móvil.',
                     style: TextStyle(
@@ -155,7 +156,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 25),
 
-            // Estado de Supabase.
             const Text(
               'Estado del sistema',
               style: TextStyle(
@@ -166,9 +166,10 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 12),
 
+            // FutureBuilder muestra el estado de la
+            // conexión cuando termina la comprobación.
             FutureBuilder<void>(
               future: _conexion,
-
               builder: (context, snapshot) {
                 final cargando =
                     snapshot.connectionState ==
@@ -184,18 +185,15 @@ class _HomePageState extends State<HomePage> {
                       conectado
                           ? Icons.cloud_done
                           : Icons.cloud_outlined,
-
                       color: cargando
                           ? Colors.orange
                           : conectado
                               ? Colors.green
                               : Colors.red,
                     ),
-
                     title: const Text(
                       'Conexión con Supabase',
                     ),
-
                     subtitle: Text(
                       cargando
                           ? 'Comprobando conexión...'
@@ -203,12 +201,9 @@ class _HomePageState extends State<HomePage> {
                               ? 'Última comprobación correcta'
                               : 'Error de conexión',
                     ),
-
                     trailing: IconButton(
                       icon: const Icon(Icons.refresh),
-                      onPressed: cargando
-                          ? null
-                          : actualizar,
+                      onPressed: cargando ? null : actualizar,
                     ),
                   ),
                 );
@@ -217,7 +212,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 25),
 
-            // Estado de los sensores.
             const Text(
               'Sensores del dispositivo',
               style: TextStyle(
@@ -228,9 +222,10 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 10),
 
+            // Muestra el resultado de la comprobación
+            // de los tres sensores físicos.
             FutureBuilder<List<String>>(
               future: _sensores,
-
               builder: (context, snapshot) {
                 final estados =
                     snapshot.connectionState ==
@@ -289,7 +284,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 25),
 
-            // Menú principal.
             const Text(
               'Menú principal',
               style: TextStyle(
@@ -300,6 +294,7 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 15),
 
+            // Tarjetas de navegación hacia los módulos.
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -355,7 +350,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Tarjetas para navegar entre pantallas.
+  /// Crea una tarjeta de navegación.
+  /// Al regresar al inicio, actualiza el estado
+  /// de conexión y los sensores disponibles.
   Widget menuCard(
     BuildContext context,
     String titulo,
@@ -385,7 +382,6 @@ class _HomePageState extends State<HomePage> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),
-
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -394,9 +390,7 @@ class _HomePageState extends State<HomePage> {
               size: 42,
               color: color,
             ),
-
             const SizedBox(height: 12),
-
             Text(
               titulo,
               style: const TextStyle(

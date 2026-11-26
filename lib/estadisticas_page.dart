@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'mediciones_service.dart';
 
+/// Pantalla que presenta estadísticas de las mediciones
+/// almacenadas en Supabase, incluyendo cantidades,
+/// valores extremos y gráficos de evolución.
 class EstadisticasPage extends StatefulWidget {
   const EstadisticasPage({super.key});
 
@@ -16,21 +19,27 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
 
   late Future<List<Map<String, dynamic>>> mediciones;
 
+  // Sensor seleccionado para visualizar su gráfico.
   String sensorGrafico = 'accelerometer';
 
   @override
   void initState() {
     super.initState();
+
+    // Consulta los registros al abrir la pantalla.
     mediciones = servicio.getMediciones();
   }
 
+  /// Actualiza las estadísticas con los registros
+  /// más recientes almacenados en Supabase.
   void actualizar() {
     setState(() {
       mediciones = servicio.getMediciones();
     });
   }
 
-  // Obtener el valor mínimo de un eje.
+  /// Calcula el valor mínimo registrado de un eje.
+  /// Ignora valores nulos y no numéricos.
   double? minimo(
     List<Map<String, dynamic>> datos,
     String eje,
@@ -47,7 +56,7 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
     return valores.first.toDouble();
   }
 
-  // Obtener el valor máximo de un eje.
+  /// Calcula el valor máximo registrado de un eje.
   double? maximo(
     List<Map<String, dynamic>> datos,
     String eje,
@@ -64,7 +73,8 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
     return valores.last.toDouble();
   }
 
-  // Tarjeta con cantidad de registros.
+  /// Crea una tarjeta con la cantidad de mediciones
+  /// correspondiente a un tipo de sensor.
   Widget tarjetaCantidad(
     String titulo,
     int cantidad,
@@ -88,7 +98,8 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
     );
   }
 
-  // Mostrar máximos y mínimos.
+  /// Construye la tabla con valores máximos y mínimos
+  /// de los ejes X, Y y Z del acelerómetro.
   Widget tarjetaExtremos(
     List<Map<String, dynamic>> acelerometro,
   ) {
@@ -109,6 +120,8 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
             const SizedBox(height: 8),
             const Text('Unidad: m/s²'),
             const SizedBox(height: 15),
+
+            // Construye las filas para cada eje.
             Table(
               border: TableBorder.all(
                 color: Colors.black12,
@@ -130,6 +143,7 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
                     ),
                   ],
                 ),
+
                 for (final eje in ['x', 'y', 'z'])
                   TableRow(
                     children: [
@@ -163,7 +177,8 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
     );
   }
 
-  // Generar una línea del gráfico.
+  /// Genera los puntos utilizados por fl_chart para
+  /// representar la evolución de un eje determinado.
   LineChartBarData linea(
     List<Map<String, dynamic>> datos,
     String eje,
@@ -190,7 +205,8 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
     );
   }
 
-  // Gráfico de evolución de los sensores.
+  /// Construye el gráfico de evolución del acelerómetro
+  /// o giroscopio utilizando las últimas 30 mediciones.
   Widget grafico(
     List<Map<String, dynamic>> acelerometro,
     List<Map<String, dynamic>> giroscopio,
@@ -200,8 +216,8 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
             ? acelerometro
             : giroscopio;
 
-    // Seleccionar las últimas 30 capturas
-    // y ordenarlas desde la más antigua.
+    // Selecciona las últimas 30 capturas y las
+    // ordena cronológicamente para dibujar el gráfico.
     final datos = seleccionados
         .where(
           (m) => ['x', 'y', 'z'].every(
@@ -228,6 +244,8 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+
+            // Permite cambiar el sensor del gráfico.
             DropdownButton<String>(
               value: sensorGrafico,
               isExpanded: true,
@@ -249,7 +267,10 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
                 }
               },
             ),
+
             const SizedBox(height: 12),
+
+            // Identificación de colores de los tres ejes.
             const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -269,12 +290,15 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
                 ),
               ],
             ),
+
             const SizedBox(height: 20),
+
             if (datos.isEmpty)
               const Center(
                 child: Text('No hay datos para graficar'),
               )
             else
+              // Dibuja las series X, Y y Z mediante fl_chart.
               SizedBox(
                 height: 230,
                 child: LineChart(
@@ -305,12 +329,15 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
                   ),
                 ),
               ),
+
             const SizedBox(height: 15),
+
             Text(
               sensorGrafico == 'accelerometer'
                   ? 'Unidad: m/s²'
                   : 'Unidad: rad/s',
             ),
+
             const Text('Eje horizontal: orden de captura'),
           ],
         ),
@@ -318,6 +345,9 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
     );
   }
 
+  /// Construye el panel de estadísticas.
+  /// Consulta los registros y los clasifica según
+  /// el tipo de sensor para realizar los cálculos.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -332,9 +362,11 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
           ),
         ],
       ),
+
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: mediciones,
         builder: (context, snapshot) {
+          // Indicador mientras se consultan los datos.
           if (snapshot.connectionState ==
               ConnectionState.waiting) {
             return const Center(
@@ -342,6 +374,7 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
             );
           }
 
+          // Permite reintentar si falla Supabase.
           if (snapshot.hasError) {
             return Center(
               child: Column(
@@ -359,6 +392,7 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
 
           final datos = snapshot.data ?? [];
 
+          // Separa los registros según el tipo de sensor.
           final acelerometro = datos.where(
             (m) => m['sensor_type'] == 'accelerometer',
           ).toList();
@@ -376,6 +410,7 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Tarjeta con el total de mediciones.
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(25),
@@ -419,6 +454,7 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
                   ),
                 ),
 
+                // Cantidad de registros de cada sensor.
                 tarjetaCantidad(
                   'Acelerómetro',
                   acelerometro.length,
@@ -442,10 +478,12 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
 
                 const SizedBox(height: 15),
 
+                // Tabla de valores extremos del acelerómetro.
                 tarjetaExtremos(acelerometro),
 
                 const SizedBox(height: 15),
 
+                // Presenta la última ubicación GPS registrada.
                 Card(
                   color: Colors.white,
                   child: Padding(
@@ -462,6 +500,7 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
                           ),
                         ),
                         const SizedBox(height: 12),
+
                         if (gps.isEmpty)
                           const Text(
                             'No hay ubicaciones registradas',
@@ -484,6 +523,7 @@ class _EstadisticasPageState extends State<EstadisticasPage> {
 
                 const SizedBox(height: 15),
 
+                // Gráfico de evolución de las mediciones.
                 grafico(acelerometro, giroscopio),
               ],
             ),

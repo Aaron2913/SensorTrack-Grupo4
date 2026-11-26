@@ -2,6 +2,9 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 
+/// Pantalla de bienvenida de SensorTrack.
+/// Se muestra durante tres segundos antes de
+/// navegar automáticamente al menú principal.
 class Splash extends StatefulWidget {
   const Splash({super.key});
 
@@ -10,19 +13,25 @@ class Splash extends StatefulWidget {
 }
 
 class _SplashState extends State<Splash> {
+
+  /// Ejecuta la navegación cuando inicia la pantalla.
   @override
   void initState() {
     super.initState();
     _irAlInicio();
   }
 
+  /// Espera tres segundos y abre la pantalla principal.
   Future<void> _irAlInicio() async {
     await Future.delayed(
       const Duration(seconds: 3),
     );
 
+    // Verifica que la pantalla siga activa.
     if (!mounted) return;
 
+    // Reemplaza Splash por HomePage, evitando
+    // regresar al Splash con el botón Atrás.
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -31,6 +40,7 @@ class _SplashState extends State<Splash> {
     );
   }
 
+  /// Construye la interfaz de bienvenida.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,6 +86,7 @@ class _SplashState extends State<Splash> {
 
             const SizedBox(height: 45),
 
+            // Indicador visual de carga.
             const CircularProgressIndicator(
               color: Colors.white,
             ),
